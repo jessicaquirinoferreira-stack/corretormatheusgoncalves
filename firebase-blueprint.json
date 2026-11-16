@@ -1,0 +1,370 @@
+{
+  "entities": {
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized administrator granted access to the private real estate CRM and CMS.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "role": { "type": "string", "enum": ["admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "name", "role", "createdAt"]
+    },
+    "Property": {
+      "title": "Property",
+      "description": "Real estate listing in Balneario Camboriu or Praia Brava.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 3, "maxLength": 160 },
+        "slug": { "type": "string", "minLength": 3, "maxLength": 160, "pattern": "^[a-z0-9\\-]+$" },
+        "purpose": { "type": "string", "enum": ["comprar", "investir", "ambos"] },
+        "type": { "type": "string", "enum": ["Apartamento", "Cobertura", "Diferenciado", "Casa", "Terreno", "Sala Comercial"] },
+        "city": { "type": "string", "enum": ["Balneario Camboriu", "Praia Brava"] },
+        "neighborhood": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "price": { "type": "number" },
+        "areaPrivate": { "type": "number" },
+        "suites": { "type": "number" },
+        "parkingSpaces": { "type": "number" },
+        "estimatedAnnualYield": { "type": "number" },
+        "status": { "type": "string", "enum": ["Disponivel", "Reservado", "Vendido", "Oculto"] },
+        "featured": { "type": "boolean" },
+        "isPublic": { "type": "boolean" },
+        "empreendimentoId": { "type": "string", "maxLength": 128 },
+        "shortDescription": { "type": "string", "maxLength": 400 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "coverImage": { "type": "string", "maxLength": 600 },
+        "gallery": { "type": "array" },
+        "videos": { "type": "array" },
+        "highlights": { "type": "array" },
+        "viewsCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "purpose", "type", "city", "neighborhood", "price", "areaPrivate", "suites", "parkingSpaces", "status", "featured", "isPublic", "createdAt", "updatedAt"]
+    },
+    "Empreendimento": {
+      "title": "Empreendimento",
+      "description": "Real estate development project in Balneario Camboriu or Praia Brava.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 160, "pattern": "^[a-z0-9\\-]+$" },
+        "developer": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "city": { "type": "string", "enum": ["Balneario Camboriu", "Praia Brava"] },
+        "neighborhood": { "type": "string", "maxLength": 100 },
+        "deliveryForecast": { "type": "string", "maxLength": 80 },
+        "stage": { "type": "string", "enum": ["Pre-Lancamento", "Lancamento", "Em Construcao", "Pronto"] },
+        "startingPrice": { "type": "number" },
+        "estimatedAppreciation": { "type": "number" },
+        "featured": { "type": "boolean" },
+        "isPublic": { "type": "boolean" },
+        "summary": { "type": "string", "maxLength": 500 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "coverImage": { "type": "string", "maxLength": 600 },
+        "gallery": { "type": "array" },
+        "videos": { "type": "array" },
+        "amenities": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "slug", "developer", "city", "deliveryForecast", "stage", "startingPrice", "featured", "isPublic", "createdAt", "updatedAt"]
+    },
+    "LandingPage": {
+      "title": "LandingPage",
+      "description": "High-conversion campaign landing page for a flagship property or development.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 160, "pattern": "^[a-z0-9\\-]+$" },
+        "subtitle": { "type": "string", "maxLength": 300 },
+        "kicker": { "type": "string", "maxLength": 120 },
+        "heroImage": { "type": "string", "maxLength": 600 },
+        "ctaLabel": { "type": "string", "maxLength": 80 },
+        "targetEntityType": { "type": "string", "enum": ["property", "empreendimento"] },
+        "targetEntityId": { "type": "string", "maxLength": 128 },
+        "isFlagshipPremium": { "type": "boolean" },
+        "isPublic": { "type": "boolean" },
+        "highlights": { "type": "array" },
+        "metrics": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "subtitle", "heroImage", "ctaLabel", "isFlagshipPremium", "isPublic", "createdAt", "updatedAt"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Captured prospect entering the real estate CRM pipeline.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "phone": { "type": "string", "minLength": 6, "maxLength": 40 },
+        "email": { "type": "string", "maxLength": 160 },
+        "origin": { "type": "string", "enum": ["Site", "Landing Page", "WhatsApp", "Instagram", "Anuncio", "Indicacao", "Manual"] },
+        "utmSource": { "type": "string", "maxLength": 100 },
+        "utmMedium": { "type": "string", "maxLength": 100 },
+        "utmCampaign": { "type": "string", "maxLength": 120 },
+        "propertyId": { "type": "string", "maxLength": 128 },
+        "propertyTitle": { "type": "string", "maxLength": 160 },
+        "budget": { "type": "number" },
+        "timeframe": { "type": "string", "maxLength": 80 },
+        "profile": { "type": "string", "enum": ["Morar", "Investir", "Ambos"] },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "score": { "type": "string", "enum": ["Quente", "Morno", "Frio"] },
+        "scorePoints": { "type": "number" },
+        "stageId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "probability": { "type": "number" },
+        "potentialValue": { "type": "number" },
+        "lostReason": { "type": "string", "maxLength": 300 },
+        "tags": { "type": "array" },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "lgpdConsent": { "type": "boolean" },
+        "lastContactAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "phone", "origin", "profile", "score", "stageId", "lgpdConsent", "createdAt", "updatedAt"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "CRM client dossier with search preferences and linked properties.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "email": { "type": "string", "maxLength": 160 },
+        "profile": { "type": "string", "enum": ["Morar", "Investir", "Ambos"] },
+        "budgetMin": { "type": "number" },
+        "budgetMax": { "type": "number" },
+        "preferredCities": { "type": "array" },
+        "interestPropertyIds": { "type": "array" },
+        "viewedPropertyIds": { "type": "array" },
+        "notes": { "type": "string", "maxLength": 4000 },
+        "documents": { "type": "array" },
+        "lgpdConsent": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "phone", "profile", "lgpdConsent", "createdAt", "updatedAt"]
+    },
+    "PipelineStage": {
+      "title": "PipelineStage",
+      "description": "Customizable sales funnel stage in the CRM Kanban.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "order": { "type": "number" },
+        "probability": { "type": "number" },
+        "isWon": { "type": "boolean" },
+        "isLost": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "order", "probability", "isWon", "isLost", "updatedAt"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "CRM interaction timeline event (call, WhatsApp, email, visit, proposal, note).",
+      "type": "object",
+      "properties": {
+        "leadId": { "type": "string", "maxLength": 128 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["Ligacao", "WhatsApp", "Email", "Visita", "Proposta", "Nota", "Sistema"] },
+        "summary": { "type": "string", "minLength": 2, "maxLength": 500 },
+        "createdBy": { "type": "string", "maxLength": 120 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "summary", "createdBy", "createdAt"]
+    },
+    "Visit": {
+      "title": "Visit",
+      "description": "Scheduled property visit in Balneario Camboriu or Praia Brava.",
+      "type": "object",
+      "properties": {
+        "leadId": { "type": "string", "maxLength": 128 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "clientName": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "propertyId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "propertyTitle": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "scheduledDate": { "type": "string", "minLength": 8, "maxLength": 32 },
+        "scheduledTime": { "type": "string", "minLength": 4, "maxLength": 16 },
+        "status": { "type": "string", "enum": ["Confirmada", "Realizada", "Cancelada", "Reagendada"] },
+        "reminderForClient": { "type": "boolean" },
+        "feedback": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientName", "propertyId", "propertyTitle", "scheduledDate", "scheduledTime", "status", "createdAt", "updatedAt"]
+    },
+    "Proposal": {
+      "title": "Proposal",
+      "description": "Formal real estate purchase proposal with version control.",
+      "type": "object",
+      "properties": {
+        "leadId": { "type": "string", "maxLength": 128 },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "clientName": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "propertyId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "propertyTitle": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "version": { "type": "number" },
+        "proposedValue": { "type": "number" },
+        "paymentTerms": { "type": "string", "maxLength": 1500 },
+        "documentationStatus": { "type": "string", "enum": ["Pendente", "Em Conferencia", "Aprovada"] },
+        "status": { "type": "string", "enum": ["Rascunho", "Enviada", "Em Analise", "Aceita", "Recusada"] },
+        "documentUrl": { "type": "string", "maxLength": 600 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientName", "propertyId", "propertyTitle", "version", "proposedValue", "documentationStatus", "status", "createdAt", "updatedAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "CRM follow-up task and automated reminder.",
+      "type": "object",
+      "properties": {
+        "leadId": { "type": "string", "maxLength": 128 },
+        "leadName": { "type": "string", "maxLength": 140 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 200 },
+        "dueDate": { "type": "string", "minLength": 8, "maxLength": 32 },
+        "priority": { "type": "string", "enum": ["Alta", "Media", "Baixa"] },
+        "status": { "type": "string", "enum": ["Pendente", "Concluida"] },
+        "isAutomated": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "dueDate", "priority", "status", "isAutomated", "createdAt", "updatedAt"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Public brand configuration and editable pending broker contact details.",
+      "type": "object",
+      "properties": {
+        "brandName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "headline": { "type": "string", "maxLength": 220 },
+        "subheadline": { "type": "string", "maxLength": 400 },
+        "creci": { "type": "string", "maxLength": 80 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "whatsapp": { "type": "string", "maxLength": 40 },
+        "email": { "type": "string", "maxLength": 160 },
+        "address": { "type": "string", "maxLength": 240 },
+        "instagramHandle": { "type": "string", "maxLength": 80 },
+        "seoTitle": { "type": "string", "maxLength": 120 },
+        "seoDescription": { "type": "string", "maxLength": 240 },
+        "footerNote": { "type": "string", "maxLength": 300 },
+        "officialLogoUrl": { "type": "string", "maxLength": 600 },
+        "watermarkEnabled": { "type": "boolean" },
+        "watermarkPosition": { "type": "string", "enum": ["bottom-right", "bottom-left", "center"] },
+        "watermarkOpacity": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["brandName", "headline", "instagramHandle", "updatedAt"]
+    },
+    "AnalyticsEvent": {
+      "title": "AnalyticsEvent",
+      "description": "Public page and property view telemetry event.",
+      "type": "object",
+      "properties": {
+        "eventType": { "type": "string", "enum": ["page_view", "property_view", "empreendimento_view", "landing_view", "lead_submit"] },
+        "path": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "entityId": { "type": "string", "maxLength": 128 },
+        "utmSource": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["eventType", "path", "createdAt"]
+    },
+    "MediaAsset": {
+      "title": "MediaAsset",
+      "description": "Uploaded or curated media asset managed via Vercel Blob / Media Hub.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "url": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "folder": { "type": "string", "maxLength": 80 },
+        "mimeType": { "type": "string", "maxLength": 80 },
+        "sizeBytes": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "url", "folder", "createdAt"]
+    },
+    "AdminLog": {
+      "title": "AdminLog",
+      "description": "Immutable audit log of administrative actions in the CRM.",
+      "type": "object",
+      "properties": {
+        "actorEmail": { "type": "string", "maxLength": 160 },
+        "action": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "entityType": { "type": "string", "maxLength": 80 },
+        "entityId": { "type": "string", "maxLength": 128 },
+        "details": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["actorEmail", "action", "entityType", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Authorized admin accounts for private CRM access."
+    },
+    "/properties/{propertyId}": {
+      "schema": { "$ref": "#/entities/Property" },
+      "description": "Publicly queryable (when isPublic==true) and admin-managed real estate listings."
+    },
+    "/empreendimentos/{empreendimentoId}": {
+      "schema": { "$ref": "#/entities/Empreendimento" },
+      "description": "Real estate developments in Balneario Camboriu and Praia Brava."
+    },
+    "/landingPages/{landingPageId}": {
+      "schema": { "$ref": "#/entities/LandingPage" },
+      "description": "Published and draft campaign landing pages."
+    },
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Captured leads from site forms, landing pages, WhatsApp, and Instagram."
+    },
+    "/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/Client" },
+      "description": "CRM client profiles, linked properties, and documents."
+    },
+    "/pipelineStages/{stageId}": {
+      "schema": { "$ref": "#/entities/PipelineStage" },
+      "description": "Customizable sales funnel stages."
+    },
+    "/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/Activity" },
+      "description": "Timeline of lead and client interactions."
+    },
+    "/visits/{visitId}": {
+      "schema": { "$ref": "#/entities/Visit" },
+      "description": "Scheduled property visits and post-visit feedback."
+    },
+    "/proposals/{proposalId}": {
+      "schema": { "$ref": "#/entities/Proposal" },
+      "description": "Versioned real estate proposals and document checklists."
+    },
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "Follow-up tasks and automated reminders."
+    },
+    "/siteSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Public website settings and editable broker contact fields."
+    },
+    "/analytics/{eventId}": {
+      "schema": { "$ref": "#/entities/AnalyticsEvent" },
+      "description": "Public traffic and property view analytics events."
+    },
+    "/media/{mediaId}": {
+      "schema": { "$ref": "#/entities/MediaAsset" },
+      "description": "Media library assets uploaded via Vercel Blob."
+    },
+    "/adminLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AdminLog" },
+      "description": "Audit logs of CRM and LGPD administrative actions."
+    }
+  }
+}

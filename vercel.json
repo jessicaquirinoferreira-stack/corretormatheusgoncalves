@@ -1,0 +1,20 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 30,
+      "includeFiles": ".data/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/((?!api/|assets/|src/assets/|uploads/|favicon\\.ico|logo-oficial-mg\\.png|matheus-goncalves\\.jpg|.*\\.(?:png|jpg|jpeg|webp|gif|svg|ico|mp4|webm|mov|js|css|map|json|txt|woff2?)).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

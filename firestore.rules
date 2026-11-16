@@ -1,0 +1,515 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Hardened Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerified() && (
+        request.auth.token.email == 'jonasweb2rj@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidOptionalString(data, field, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function isValidOptionalNumber(data, field) {
+      return !(field in data) || (data[field] is number);
+    }
+
+    function isValidOptionalStringList(data, field, maxItems) {
+      return !(field in data) || (
+        data[field] is list &&
+        data[field].size() <= maxItems &&
+        (data[field].size() == 0 || data[field][0] is string)
+      );
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'name', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'name', 'role', 'createdAt']) &&
+        isValidId(data.uid) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.role == 'admin' &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidProperty(data) {
+      return data.keys().hasAll([
+          'title', 'slug', 'purpose', 'type', 'city', 'neighborhood',
+          'price', 'areaPrivate', 'suites', 'parkingSpaces', 'status',
+          'featured', 'isPublic', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'title', 'slug', 'purpose', 'type', 'city', 'neighborhood',
+          'price', 'areaPrivate', 'suites', 'parkingSpaces', 'estimatedAnnualYield',
+          'status', 'featured', 'isPublic', 'empreendimentoId', 'shortDescription',
+          'description', 'coverImage', 'gallery', 'videos', 'highlights', 'viewsCount',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidOptionalString(data, 'id', 128) &&
+        data.title is string && data.title.size() >= 3 && data.title.size() <= 160 &&
+        data.slug is string && data.slug.size() >= 3 && data.slug.size() <= 160 && data.slug.matches('^[a-z0-9\\-]+$') &&
+        data.purpose in ['comprar', 'investir', 'ambos'] &&
+        data.type in ['Apartamento', 'Cobertura', 'Diferenciado', 'Casa', 'Terreno', 'Sala Comercial'] &&
+        data.city in ['Balneario Camboriu', 'Praia Brava'] &&
+        data.neighborhood is string && data.neighborhood.size() >= 2 && data.neighborhood.size() <= 100 &&
+        data.price is number && data.price >= 0 &&
+        data.areaPrivate is number && data.areaPrivate >= 0 &&
+        data.suites is number && data.suites >= 0 &&
+        data.parkingSpaces is number && data.parkingSpaces >= 0 &&
+        isValidOptionalNumber(data, 'estimatedAnnualYield') &&
+        data.status in ['Disponivel', 'Reservado', 'Vendido', 'Oculto'] &&
+        data.featured is bool &&
+        data.isPublic is bool &&
+        isValidOptionalString(data, 'empreendimentoId', 128) &&
+        isValidOptionalString(data, 'shortDescription', 400) &&
+        isValidOptionalString(data, 'description', 5000) &&
+        isValidOptionalString(data, 'coverImage', 600) &&
+        isValidOptionalStringList(data, 'gallery', 500) &&
+        isValidOptionalStringList(data, 'videos', 200) &&
+        isValidOptionalStringList(data, 'highlights', 15) &&
+        isValidOptionalNumber(data, 'viewsCount') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidEmpreendimento(data) {
+      return data.keys().hasAll([
+          'name', 'slug', 'developer', 'city', 'deliveryForecast',
+          'stage', 'startingPrice', 'featured', 'isPublic', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'name', 'slug', 'developer', 'city', 'neighborhood', 'deliveryForecast',
+          'stage', 'startingPrice', 'estimatedAppreciation', 'featured', 'isPublic',
+          'summary', 'description', 'coverImage', 'gallery', 'videos', 'amenities', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidOptionalString(data, 'id', 128) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 160 &&
+        data.slug is string && data.slug.size() >= 2 && data.slug.size() <= 160 && data.slug.matches('^[a-z0-9\\-]+$') &&
+        data.developer is string && data.developer.size() >= 2 && data.developer.size() <= 120 &&
+        data.city in ['Balneario Camboriu', 'Praia Brava'] &&
+        isValidOptionalString(data, 'neighborhood', 100) &&
+        data.deliveryForecast is string && data.deliveryForecast.size() >= 2 && data.deliveryForecast.size() <= 80 &&
+        data.stage in ['Pre-Lancamento', 'Lancamento', 'Em Construcao', 'Pronto'] &&
+        data.startingPrice is number && data.startingPrice >= 0 &&
+        isValidOptionalNumber(data, 'estimatedAppreciation') &&
+        data.featured is bool &&
+        data.isPublic is bool &&
+        isValidOptionalString(data, 'summary', 500) &&
+        isValidOptionalString(data, 'description', 5000) &&
+        isValidOptionalString(data, 'coverImage', 600) &&
+        isValidOptionalStringList(data, 'gallery', 500) &&
+        isValidOptionalStringList(data, 'videos', 200) &&
+        isValidOptionalStringList(data, 'amenities', 20) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidLandingPage(data) {
+      return data.keys().hasAll([
+          'title', 'slug', 'subtitle', 'heroImage', 'ctaLabel',
+          'isFlagshipPremium', 'isPublic', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'title', 'slug', 'subtitle', 'kicker', 'heroImage', 'ctaLabel',
+          'targetEntityType', 'targetEntityId', 'isFlagshipPremium', 'isPublic',
+          'highlights', 'metrics', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidOptionalString(data, 'id', 128) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 160 &&
+        data.slug is string && data.slug.size() >= 2 && data.slug.size() <= 160 && data.slug.matches('^[a-z0-9\\-]+$') &&
+        data.subtitle is string && data.subtitle.size() <= 300 &&
+        isValidOptionalString(data, 'kicker', 120) &&
+        data.heroImage is string && data.heroImage.size() <= 600 &&
+        data.ctaLabel is string && data.ctaLabel.size() <= 80 &&
+        (!('targetEntityType' in data) || data.targetEntityType in ['property', 'empreendimento']) &&
+        isValidOptionalString(data, 'targetEntityId', 128) &&
+        data.isFlagshipPremium is bool &&
+        data.isPublic is bool &&
+        isValidOptionalStringList(data, 'highlights', 12) &&
+        isValidOptionalStringList(data, 'metrics', 8) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidLead(data) {
+      return data.keys().hasAll([
+          'name', 'phone', 'origin', 'profile', 'score', 'stageId',
+          'lgpdConsent', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'name', 'phone', 'email', 'origin', 'utmSource', 'utmMedium', 'utmCampaign',
+          'propertyId', 'propertyTitle', 'budget', 'timeframe', 'profile', 'notes',
+          'score', 'scorePoints', 'stageId', 'probability', 'potentialValue',
+          'lostReason', 'tags', 'clientId', 'lgpdConsent', 'lastContactAt',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 140 &&
+        data.phone is string && data.phone.size() >= 6 && data.phone.size() <= 40 &&
+        isValidOptionalString(data, 'email', 160) &&
+        data.origin in ['Site', 'Landing Page', 'WhatsApp', 'Instagram', 'Anuncio', 'Indicacao', 'Manual'] &&
+        isValidOptionalString(data, 'utmSource', 100) &&
+        isValidOptionalString(data, 'utmMedium', 100) &&
+        isValidOptionalString(data, 'utmCampaign', 120) &&
+        isValidOptionalString(data, 'propertyId', 128) &&
+        isValidOptionalString(data, 'propertyTitle', 160) &&
+        isValidOptionalNumber(data, 'budget') &&
+        isValidOptionalString(data, 'timeframe', 80) &&
+        data.profile in ['Morar', 'Investir', 'Ambos'] &&
+        isValidOptionalString(data, 'notes', 2000) &&
+        data.score in ['Quente', 'Morno', 'Frio'] &&
+        isValidOptionalNumber(data, 'scorePoints') &&
+        data.stageId is string && data.stageId.size() >= 1 && data.stageId.size() <= 64 &&
+        isValidOptionalNumber(data, 'probability') &&
+        isValidOptionalNumber(data, 'potentialValue') &&
+        isValidOptionalString(data, 'lostReason', 300) &&
+        isValidOptionalStringList(data, 'tags', 10) &&
+        isValidOptionalString(data, 'clientId', 128) &&
+        data.lgpdConsent is bool &&
+        (!('lastContactAt' in data) || data.lastContactAt is timestamp) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidClient(data) {
+      return data.keys().hasAll(['name', 'phone', 'profile', 'lgpdConsent', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'name', 'phone', 'email', 'profile', 'budgetMin', 'budgetMax',
+          'preferredCities', 'interestPropertyIds', 'viewedPropertyIds',
+          'notes', 'documents', 'lgpdConsent', 'createdAt', 'updatedAt'
+        ]) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 140 &&
+        data.phone is string && data.phone.size() <= 40 &&
+        isValidOptionalString(data, 'email', 160) &&
+        data.profile in ['Morar', 'Investir', 'Ambos'] &&
+        isValidOptionalNumber(data, 'budgetMin') &&
+        isValidOptionalNumber(data, 'budgetMax') &&
+        isValidOptionalStringList(data, 'preferredCities', 5) &&
+        isValidOptionalStringList(data, 'interestPropertyIds', 20) &&
+        isValidOptionalStringList(data, 'viewedPropertyIds', 30) &&
+        isValidOptionalString(data, 'notes', 4000) &&
+        isValidOptionalStringList(data, 'documents', 20) &&
+        data.lgpdConsent is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPipelineStage(data) {
+      return data.keys().hasAll(['name', 'order', 'probability', 'isWon', 'isLost', 'updatedAt']) &&
+        data.keys().hasOnly(['name', 'order', 'probability', 'isWon', 'isLost', 'updatedAt']) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 80 &&
+        data.order is number && data.order >= 0 &&
+        data.probability is number && data.probability >= 0 && data.probability <= 100 &&
+        data.isWon is bool &&
+        data.isLost is bool &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidActivity(data) {
+      return data.keys().hasAll(['type', 'summary', 'createdBy', 'createdAt']) &&
+        data.keys().hasOnly(['leadId', 'clientId', 'type', 'summary', 'createdBy', 'createdAt']) &&
+        isValidOptionalString(data, 'leadId', 128) &&
+        isValidOptionalString(data, 'clientId', 128) &&
+        data.type in ['Ligacao', 'WhatsApp', 'Email', 'Visita', 'Proposta', 'Nota', 'Sistema'] &&
+        data.summary is string && data.summary.size() >= 2 && data.summary.size() <= 500 &&
+        data.createdBy is string && data.createdBy.size() <= 120 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidVisit(data) {
+      return data.keys().hasAll([
+          'clientName', 'propertyId', 'propertyTitle', 'scheduledDate',
+          'scheduledTime', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'leadId', 'clientId', 'clientName', 'propertyId', 'propertyTitle',
+          'scheduledDate', 'scheduledTime', 'status', 'reminderForClient',
+          'feedback', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidOptionalString(data, 'leadId', 128) &&
+        isValidOptionalString(data, 'clientId', 128) &&
+        data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 140 &&
+        data.propertyId is string && data.propertyId.size() >= 1 && data.propertyId.size() <= 128 &&
+        data.propertyTitle is string && data.propertyTitle.size() >= 2 && data.propertyTitle.size() <= 160 &&
+        data.scheduledDate is string && data.scheduledDate.size() >= 8 && data.scheduledDate.size() <= 32 &&
+        data.scheduledTime is string && data.scheduledTime.size() >= 4 && data.scheduledTime.size() <= 16 &&
+        data.status in ['Confirmada', 'Realizada', 'Cancelada', 'Reagendada'] &&
+        (!('reminderForClient' in data) || data.reminderForClient is bool) &&
+        isValidOptionalString(data, 'feedback', 2000) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidProposal(data) {
+      return data.keys().hasAll([
+          'clientName', 'propertyId', 'propertyTitle', 'version',
+          'proposedValue', 'documentationStatus', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'leadId', 'clientId', 'clientName', 'propertyId', 'propertyTitle',
+          'version', 'proposedValue', 'paymentTerms', 'documentationStatus',
+          'status', 'documentUrl', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidOptionalString(data, 'leadId', 128) &&
+        isValidOptionalString(data, 'clientId', 128) &&
+        data.clientName is string && data.clientName.size() >= 2 && data.clientName.size() <= 140 &&
+        data.propertyId is string && data.propertyId.size() >= 1 && data.propertyId.size() <= 128 &&
+        data.propertyTitle is string && data.propertyTitle.size() >= 2 && data.propertyTitle.size() <= 160 &&
+        data.version is number && data.version >= 1 &&
+        data.proposedValue is number && data.proposedValue >= 0 &&
+        isValidOptionalString(data, 'paymentTerms', 1500) &&
+        data.documentationStatus in ['Pendente', 'Em Conferencia', 'Aprovada'] &&
+        data.status in ['Rascunho', 'Enviada', 'Em Analise', 'Aceita', 'Recusada'] &&
+        isValidOptionalString(data, 'documentUrl', 600) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['title', 'dueDate', 'priority', 'status', 'isAutomated', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['leadId', 'leadName', 'title', 'dueDate', 'priority', 'status', 'isAutomated', 'createdAt', 'updatedAt']) &&
+        isValidOptionalString(data, 'leadId', 128) &&
+        isValidOptionalString(data, 'leadName', 140) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 200 &&
+        data.dueDate is string && data.dueDate.size() >= 8 && data.dueDate.size() <= 32 &&
+        data.priority in ['Alta', 'Media', 'Baixa'] &&
+        data.status in ['Pendente', 'Concluida'] &&
+        data.isAutomated is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSiteSettings(data) {
+      return data.keys().hasAll(['brandName', 'headline', 'instagramHandle', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'brandName', 'headline', 'subheadline', 'creci', 'phone', 'whatsapp',
+          'email', 'address', 'instagramHandle', 'seoTitle', 'seoDescription',
+          'footerNote', 'officialLogoUrl', 'watermarkEnabled', 'watermarkPosition',
+          'watermarkOpacity', 'updatedAt'
+        ]) &&
+        data.brandName is string && data.brandName.size() >= 2 && data.brandName.size() <= 120 &&
+        data.headline is string && data.headline.size() <= 220 &&
+        isValidOptionalString(data, 'subheadline', 400) &&
+        isValidOptionalString(data, 'creci', 80) &&
+        isValidOptionalString(data, 'phone', 40) &&
+        isValidOptionalString(data, 'whatsapp', 40) &&
+        isValidOptionalString(data, 'email', 160) &&
+        isValidOptionalString(data, 'address', 240) &&
+        data.instagramHandle is string && data.instagramHandle.size() <= 80 &&
+        isValidOptionalString(data, 'seoTitle', 120) &&
+        isValidOptionalString(data, 'seoDescription', 240) &&
+        isValidOptionalString(data, 'footerNote', 300) &&
+        isValidOptionalString(data, 'officialLogoUrl', 600) &&
+        (!('watermarkEnabled' in data) || data.watermarkEnabled is bool) &&
+        (!('watermarkPosition' in data) || data.watermarkPosition in ['bottom-right', 'bottom-left', 'center']) &&
+        isValidOptionalNumber(data, 'watermarkOpacity') &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAnalyticsEvent(data) {
+      return data.keys().hasAll(['eventType', 'path', 'createdAt']) &&
+        data.keys().hasOnly(['eventType', 'path', 'entityId', 'utmSource', 'createdAt']) &&
+        data.eventType in ['page_view', 'property_view', 'empreendimento_view', 'landing_view', 'lead_submit'] &&
+        data.path is string && data.path.size() >= 1 && data.path.size() <= 240 &&
+        isValidOptionalString(data, 'entityId', 128) &&
+        isValidOptionalString(data, 'utmSource', 100) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidMediaAsset(data) {
+      return data.keys().hasAll(['name', 'url', 'folder', 'createdAt']) &&
+        data.keys().hasOnly(['name', 'url', 'folder', 'mimeType', 'sizeBytes', 'createdAt']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 160 &&
+        data.url is string && data.url.size() >= 1 && data.url.size() <= 600 &&
+        data.folder is string && data.folder.size() >= 1 && data.folder.size() <= 80 &&
+        isValidOptionalString(data, 'mimeType', 80) &&
+        isValidOptionalNumber(data, 'sizeBytes') &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidAdminLog(data) {
+      return data.keys().hasAll(['actorEmail', 'action', 'entityType', 'createdAt']) &&
+        data.keys().hasOnly(['actorEmail', 'action', 'entityType', 'entityId', 'details', 'createdAt']) &&
+        data.actorEmail is string && data.actorEmail.size() <= 160 &&
+        data.action is string && data.action.size() >= 2 && data.action.size() <= 120 &&
+        data.entityType is string && data.entityType.size() <= 80 &&
+        isValidOptionalString(data, 'entityId', 128) &&
+        isValidOptionalString(data, 'details', 500) &&
+        data.createdAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(uid) && isAdmin() && isValidAdminUser(incoming()) && incoming().createdAt == request.time;
+      allow update: if isValidId(uid) && isAdmin() && isValidAdminUser(incoming()) && incoming().createdAt == existing().createdAt;
+      allow delete: if isValidId(uid) && isAdmin() && uid != request.auth.uid;
+    }
+
+    match /properties/{propertyId} {
+      allow get: if isValidId(propertyId) && (isAdmin() || existing().isPublic == true);
+      allow list: if isAdmin() || existing().isPublic == true;
+      allow create: if isValidId(propertyId) && isAdmin() && isValidProperty(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(propertyId) && isAdmin() && isValidProperty(incoming()) &&
+        incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(propertyId) && isAdmin();
+    }
+
+    match /empreendimentos/{empreendimentoId} {
+      allow get: if isValidId(empreendimentoId) && (isAdmin() || existing().isPublic == true);
+      allow list: if isAdmin() || existing().isPublic == true;
+      allow create: if isValidId(empreendimentoId) && isAdmin() && isValidEmpreendimento(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(empreendimentoId) && isAdmin() && isValidEmpreendimento(incoming()) &&
+        incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(empreendimentoId) && isAdmin();
+    }
+
+    match /landingPages/{landingPageId} {
+      allow get: if isValidId(landingPageId) && (isAdmin() || existing().isPublic == true);
+      allow list: if isAdmin() || existing().isPublic == true;
+      allow create: if isValidId(landingPageId) && isAdmin() && isValidLandingPage(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(landingPageId) && isAdmin() && isValidLandingPage(incoming()) &&
+        incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(landingPageId) && isAdmin();
+    }
+
+    match /leads/{leadId} {
+      allow get: if isValidId(leadId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(leadId) && isValidLead(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time && (
+          isAdmin() || (
+            incoming().stageId == 'novo_lead' &&
+            incoming().lgpdConsent == true &&
+            incoming().origin in ['Site', 'Landing Page', 'WhatsApp', 'Instagram', 'Anuncio']
+          )
+        );
+      allow update: if isValidId(leadId) && isAdmin() && isValidLead(incoming()) &&
+        incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(leadId) && isAdmin();
+    }
+
+    match /clients/{clientId} {
+      allow get: if isValidId(clientId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(clientId) && isAdmin() && isValidClient(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(clientId) && isAdmin() && isValidClient(incoming()) &&
+        incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(clientId) && isAdmin();
+    }
+
+    match /pipelineStages/{stageId} {
+      allow get: if isValidId(stageId) && isAdmin();
+      allow list: if isAdmin();
+      allow create, update: if isValidId(stageId) && isAdmin() && isValidPipelineStage(incoming()) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isValidId(stageId) && isAdmin();
+    }
+
+    match /activities/{activityId} {
+      allow get: if isValidId(activityId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(activityId) && isAdmin() && isValidActivity(incoming()) &&
+        incoming().createdAt == request.time;
+      allow delete: if isValidId(activityId) && isAdmin();
+    }
+
+    match /visits/{visitId} {
+      allow get: if isValidId(visitId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(visitId) && isAdmin() && isValidVisit(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(visitId) && isAdmin() && isValidVisit(incoming()) &&
+        incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(visitId) && isAdmin();
+    }
+
+    match /proposals/{proposalId} {
+      allow get: if isValidId(proposalId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(proposalId) && isAdmin() && isValidProposal(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(proposalId) && isAdmin() && isValidProposal(incoming()) &&
+        incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(proposalId) && isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow get: if isValidId(taskId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(taskId) && isAdmin() && isValidTask(incoming()) &&
+        incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(taskId) && isAdmin() && isValidTask(incoming()) &&
+        incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(taskId) && isAdmin();
+    }
+
+    match /siteSettings/{settingId} {
+      allow get: if isValidId(settingId) && (settingId == 'main' || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isValidId(settingId) && isAdmin() && isValidSiteSettings(incoming()) &&
+        incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /analytics/{eventId} {
+      allow get: if isValidId(eventId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(eventId) && isValidAnalyticsEvent(incoming()) &&
+        incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /media/{mediaId} {
+      allow get: if isValidId(mediaId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(mediaId) && isAdmin() && isValidMediaAsset(incoming()) &&
+        incoming().createdAt == request.time;
+      allow delete: if isValidId(mediaId) && isAdmin();
+    }
+
+    match /adminLogs/{logId} {
+      allow get: if isValidId(logId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(logId) && isAdmin() && isValidAdminLog(incoming()) &&
+        incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+  }
+}
